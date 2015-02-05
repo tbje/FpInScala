@@ -3,6 +3,9 @@ package fp
 
 object Chapter4Option {
 
+  object Option {
+    def apply[T](t: T) = if (t == null) Some(t) else None
+  }
   sealed trait Option[+A] {
     def map[B](f: A => B): Option[B] = ???
     def flatMap[B](f: A => Option[B]): Option[B] = ???
@@ -24,7 +27,8 @@ object Chapter4Option {
 
   // 4.2 Implement the variance function in terms of flatMap.
   // If the mean of a sequence is m, the variance is the mean of math.pow(x - m, 2) for each element x in the sequence
-  def variance(xs: Seq[Double]): Option[Double] = ???
+  def variance(xs: Seq[Double]): Option[Double] = ??? //xs flatMap { x => math.pow(x - mean(x), 2)}
+
 
 
   def Try[A](a: => A): Option[A] =
@@ -33,14 +37,21 @@ object Chapter4Option {
 
   // 4.3 Write a generic function map2 that combines two Option values using a binary function.
   // If either Option value is None, then the return value is too. Here is its signature:
-  def map2[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] = ???
+  def map2[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] = for {
+    a <- a
+    b <- b
+  } yield f(a,b)
 
 
   // 4.4 Write a function sequence that combines a list of Options into one Option containing
   // a list of all the Some values in the original list. If the original list contains None even
   // once, the result of the function should be None; otherwise the result should be Some with a
   // list of all the values. Here is its signature:
-  def sequence[A](a: List[Option[A]]): Option[List[A]] = ???
+  def sequence[A](a: List[Option[A]]): Option[List[A]] = a.foldLeft(Some(List[A]()): Option[List[A]]){
+    case (Some(lst), Some(a)) => Some(lst :+ a)
+    case _ => None
+  }
+
 
 
   def parseInts(a: List[String]): Option[List[Int]] =
@@ -50,7 +61,15 @@ object Chapter4Option {
 
   // 4.5 Implement traverse. It’s straightforward to do using map and sequence, but try for a more efficient
   // implementation that only looks at the list once. In fact, implement sequence in terms of traverse.
-  def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] = ???
+  def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] = as.foldRight(Option(List[B]())){
+    case (a, Some(bs)) => f(a) match {
+      case Some(b) => Some(b +: bs)
+      case _ => None
+    }
+    case _ => None
+  }
+
+  def sequenceFromTraverse[A](a: List[Option[A]]): Option[List[A]] = traverse(a){ x => x }
 
 }
 
@@ -77,6 +96,7 @@ object Chapter4Either {
 
 
   // 4.6 Implement versions of map, flatMap, orElse, and map2 on Either that operate on the Right value.
+
 
 
   // 4.7 Implement sequence and traverse for Either. These should return the first error that’s encountered, if there is one.
